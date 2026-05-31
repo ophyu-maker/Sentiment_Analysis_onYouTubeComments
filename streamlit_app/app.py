@@ -734,15 +734,11 @@ if run_button:
 
     st.subheader("Word Frequency Analysis")
 
-    col1, col2 = st.columns([1, 1], vertical_alignment="top")
-
-    with col1:
-        st.markdown("#### Word Cloud")
+        st.write("#### Word Cloud")
         wc_fig = create_wordcloud(word_counts)
         st.pyplot(wc_fig, use_container_width=True)
 
-    with col2:
-        st.markdown(f"#### Top {top_words} Words Treemap")
+        st.write(f"#### Top {top_words} Words Treemap")
         tree_fig = create_treemap(word_counts, top_n=top_words)
 
         tree_fig.update_layout(
@@ -763,10 +759,7 @@ if run_button:
     if topic_summary.empty:
         st.warning("LDA could not generate topics. Try increasing the number of comments.")
     else:
-        col1, col2 = st.columns([1, 2], vertical_alignment="top")
-
-        with col1:
-            st.markdown("#### Topic Keywords")
+        st.write("#### Topic Keywords")
 
             topic_display = topic_keywords_df.copy()
             topic_display["topic_keywords"] = topic_display["topic_keywords"].str.wrap(45)
@@ -778,8 +771,7 @@ if run_button:
                 height=220
             )
 
-        with col2:
-            st.markdown("#### Main Discussion Topics")
+        st.write("#### Main Discussion Topics")
 
             fig = px.bar(
                 topic_summary,
@@ -798,7 +790,6 @@ if run_button:
                 yaxis_title="Comment Count"
             )
 
-            st.plotly_chart(fig, use_container_width=True)
 
         st.write("Comments with Assigned LDA Topics")
 
