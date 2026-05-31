@@ -463,10 +463,6 @@ def run_lda_topic_modeling(df_nlp, num_topics=3, topn=8):
 
 st.sidebar.header("Settings")
 
-mode = st.sidebar.radio(
-    "Choose analysis mode",
-    ["Default YouTube URLs", "Enter your own YouTube URL"]
-)
 
 max_pages = st.sidebar.slider(
     "Max comment pages per video",
@@ -495,25 +491,14 @@ top_words = st.sidebar.slider(
 # Input section
 # =========================================================
 
-if mode == "Default YouTube URLs":
-    st.subheader("Mode 1: Default YouTube Video Analysis")
+st.subheader("Analyze Your Own YouTube Video")
 
-    st.write("Default videos:")
-    for url in DEFAULT_VIDEO_URLS:
-        st.code(url)
+ user_url = st.text_input(
+         "Enter YouTube video URL or Run default video URL",
+          placeholder="https://www.youtube.com/watch?v=h-l_6617x6A"
+     )
 
-    video_urls = DEFAULT_VIDEO_URLS
-
-else:
-    st.subheader("Mode 2: Analyze Your Own YouTube Video")
-
-    user_url = st.text_input(
-        "Enter YouTube video URL",
-        placeholder="https://www.youtube.com/watch?v=VIDEO_ID"
-    )
-
-    video_urls = [user_url] if user_url else []
-
+video_urls = [user_url] if user_url else []
 
 run_button = st.button("Run Analysis", type="primary")
 
