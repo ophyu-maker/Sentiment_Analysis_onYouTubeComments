@@ -372,8 +372,7 @@ def create_treemap(word_counts, top_n=10):
     fig = px.treemap(
         top_words,
         path=["word"],
-        values="count",
-        title=f"Top {top_n} Words Treemap"
+        values="count"
     )
 
     return fig
@@ -586,6 +585,8 @@ if run_button:
     col3.metric("Avg Comment Length", round(results_df["clean_comment"].str.len().mean(), 1))
     col4.metric("Total Unique Words", f"{len(word_counts):,}")
 
+    st.divider()
+
     # =====================================================
     # Sentiment comparison
     # =====================================================
@@ -597,10 +598,6 @@ if run_button:
     col1, col2 = st.columns([1, 2])
 
     with col1:
-        st.write("Model Comparison Table")
-        st.dataframe(comparison_table, use_container_width=True)
-
-    with col2:
         fig = px.bar(
             comparison_long,
             x="sentiment_label",
@@ -611,8 +608,14 @@ if run_button:
             title="Sentiment Distribution Across 3 Models"
         )
 
+    with col2:
+        st.write("Model Comparison Table")
+        st.dataframe(comparison_table, use_container_width=True)
+
         fig.update_traces(textposition="outside")
         st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
 
     # =====================================================
     # Individual model charts
@@ -722,6 +725,8 @@ if run_button:
             use_container_width=True
         )
 
+    st.divider()
+
     # =====================================================
     # Wordcloud and treemap
     # =====================================================
@@ -736,7 +741,7 @@ if run_button:
         st.pyplot(wc_fig)
 
     with col2:
-        st.write("Word Frequency Treemap")
+        st.write("Top {top-n} Word Treemap")
         tree_fig = create_treemap(word_counts, top_n=top_words)
         st.plotly_chart(tree_fig, use_container_width=True)
 
@@ -744,6 +749,8 @@ if run_button:
     top_word_df = word_counts.head(10).reset_index()
     top_word_df.columns = ["word", "count"]
     st.dataframe(top_word_df, use_container_width=True)
+
+    st.divider()
 
     # =====================================================
     # LDA topic modeling
@@ -787,6 +794,8 @@ if run_button:
             ].sort_values("topic_score", ascending=False).head(30),
             use_container_width=True
         )
+
+    st.divider()
 
     # =====================================================
     # Download results
