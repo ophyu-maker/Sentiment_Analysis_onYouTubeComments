@@ -52,8 +52,7 @@ except Exception:
 # Replace these with your default YouTube video IDs or URLs
 
 DEFAULT_VIDEO_URLS = [
-    "https://www.youtube.com/watch?v=nd_aWdQmeaU",
-    "https://www.youtube.com/watch?v=KFLuuCxCS5s"
+    "https://www.youtube.com/watch?v=h-l_6617x6A"
 ]
 
 
@@ -366,7 +365,7 @@ def create_wordcloud(word_counts):
     return fig
 
 
-def create_treemap(word_counts, top_n=30):
+def create_treemap(word_counts, top_n=10):
     top_words = word_counts.head(top_n).reset_index()
     top_words.columns = ["word", "count"]
 
@@ -473,23 +472,23 @@ mode = st.sidebar.radio(
 max_pages = st.sidebar.slider(
     "Max comment pages per video",
     min_value=1,
-    max_value=10,
-    value=3,
+    max_value=4,
+    value=2,
     help="Each page can pull up to 100 comments. Higher values may take longer."
 )
 
 num_topics = st.sidebar.slider(
     "Number of LDA topics",
     min_value=2,
-    max_value=8,
+    max_value=5,
     value=3
 )
 
 top_words = st.sidebar.slider(
     "Top words for treemap",
     min_value=10,
-    max_value=50,
-    value=30
+    max_value=30,
+    value=10
 )
 
 
@@ -742,7 +741,7 @@ if run_button:
         st.plotly_chart(tree_fig, use_container_width=True)
 
     st.write("Top Words")
-    top_word_df = word_counts.head(30).reset_index()
+    top_word_df = word_counts.head(10).reset_index()
     top_word_df.columns = ["word", "count"]
     st.dataframe(top_word_df, use_container_width=True)
 
@@ -783,12 +782,9 @@ if run_button:
                     "date",
                     "comment",
                     "topic_id",
-                    "topic_score",
-                    "vader_label",
-                    "distilbert_label",
-                    "roberta_label"
+                    "topic_score"
                 ]
-            ].sort_values("topic_score", ascending=False).head(50),
+            ].sort_values("topic_score", ascending=False).head(30),
             use_container_width=True
         )
 
