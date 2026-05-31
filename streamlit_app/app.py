@@ -599,6 +599,7 @@ if run_button:
 
     with col1:
         fig = px.bar(
+
             comparison_long,
             x="sentiment_label",
             y="comment_count",
@@ -608,12 +609,12 @@ if run_button:
             title="Sentiment Distribution Across 3 Models"
         )
 
+        fig.update_traces(textposition="outside")
+        st.plotly_chart(fig, use_container_width=True)
+
     with col2:
         st.write("Model Comparison Table")
         st.dataframe(comparison_table, use_container_width=True)
-
-        fig.update_traces(textposition="outside")
-        st.plotly_chart(fig, use_container_width=True)
 
     st.divider()
 
@@ -733,22 +734,23 @@ if run_button:
 
     st.subheader("Word Frequency Analysis")
 
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 1], vertical_alignment="top")
 
     with col1:
-        st.write("Word Cloud")
+        st.markdown("#### Word Cloud")
         wc_fig = create_wordcloud(word_counts)
-        st.pyplot(wc_fig)
+        st.pyplot(wc_fig, use_container_width=True)
 
     with col2:
-        st.write("Top {top-n} Word Treemap")
+        st.markdown(f"#### Top {top_words} Words Treemap")
         tree_fig = create_treemap(word_counts, top_n=top_words)
-        st.plotly_chart(tree_fig, use_container_width=True)
 
-    st.write("Top Words")
-    top_word_df = word_counts.head(10).reset_index()
-    top_word_df.columns = ["word", "count"]
-    st.dataframe(top_word_df, use_container_width=True)
+        tree_fig.update_layout(
+            height=500,
+            margin=dict(l=10, r=10, t=30, b=10)
+        )
+
+        st.plotly_chart(tree_fig, use_container_width=True)
 
     st.divider()
 
@@ -761,23 +763,40 @@ if run_button:
     if topic_summary.empty:
         st.warning("LDA could not generate topics. Try increasing the number of comments.")
     else:
-        col1, col2 = st.columns([1, 2])
+        col1, col2 = st.columns([1, 2], vertical_alignment="top")
 
         with col1:
-            st.write("Topic Keywords")
-            st.dataframe(topic_keywords_df, use_container_width=True)
+            st.markdown("#### Topic Keywords")
+
+            topic_display = topic_keywords_df.copy()
+            topic_display["topic_keywords"] = topic_display["topic_keywords"].str.wrap(45)
+
+            st.dataframe(
+                topic_display,
+                use_container_width=True,
+                hide_index=True,
+                height=220
+            )
 
         with col2:
+            st.markdown("#### Main Discussion Topics")
+
             fig = px.bar(
                 topic_summary,
                 x="topic_name",
                 y="comment_count",
-                text="comment_count",
-                title="Main Discussion Topics in YouTube Comments"
+                text="comment_count"
             )
 
             fig.update_traces(textposition="outside")
-            fig.update_layout(xaxis_tickangle=-30)
+
+            fig.update_layout(
+                height=420,
+                margin=dict(l=10, r=10, t=20, b=80),
+                xaxis_tickangle=-30,
+                xaxis_title="Topic",
+                yaxis_title="Comment Count"
+            )
 
             st.plotly_chart(fig, use_container_width=True)
 
@@ -789,10 +808,14 @@ if run_button:
                     "date",
                     "comment",
                     "topic_id",
-                    "topic_score"
+                    "topic_score",
+                    "vader_label",
+                    "distilbert_label",
+                    "roberta_label"
                 ]
-            ].sort_values("topic_score", ascending=False).head(30),
-            use_container_width=True
+            ].sort_values("topic_score", ascending=False).head(50),
+            use_container_width=True,
+            hide_index=True
         )
 
     st.divider()
