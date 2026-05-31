@@ -595,26 +595,36 @@ if run_button:
 
     comparison_table, comparison_long = create_model_comparison(results_df)
 
-    col1, col2 = st.columns([1, 2])
+    st.markdown("#### Model Comparison Table")
 
-    with col1:
-        fig = px.bar(
+    st.dataframe(
+        comparison_table,
+        use_container_width=True,
+        hide_index=True
+    )
+    
+    st.markdown("#### Sentiment Distribution Across 3 Models")
 
-            comparison_long,
-            x="sentiment_label",
-            y="comment_count",
-            color="model",
-            barmode="group",
-            text="comment_count",
-            title="Sentiment Distribution Across 3 Models"
-        )
+    fig = px.bar(
+        comparison_long,
+        x="sentiment_label",
+        y="comment_count",
+        color="model",
+        barmode="group",
+        text="comment_count"
+    )
 
-        fig.update_traces(textposition="outside")
-        st.plotly_chart(fig, use_container_width=True)
+    fig.update_traces(textposition="outside")
 
-    with col2:
-        st.write("Model Comparison Table")
-        st.dataframe(comparison_table, use_container_width=True)
+    fig.update_layout(
+        height=500,
+        margin=dict(l=10, r=10, t=30, b=40),
+        xaxis_title="Sentiment Label",
+        yaxis_title="Comment Count",
+        legend_title="Model"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
     st.divider()
 
@@ -734,21 +744,22 @@ if run_button:
 
     st.subheader("Word Frequency Analysis")
 
-        st.write("#### Word Cloud")
-        wc_fig = create_wordcloud(word_counts)
-        st.pyplot(wc_fig, use_container_width=True)
+    st.markdown("#### Word Cloud")
+    wc_fig = create_wordcloud(word_counts)
+    st.pyplot(wc_fig, use_container_width=True)
 
-        st.write(f"#### Top {top_words} Words Treemap")
-        tree_fig = create_treemap(word_counts, top_n=top_words)
+    st.markdown(f"#### Top {top_words} Words Treemap")
+    tree_fig = create_treemap(word_counts, top_n=top_words)
 
-        tree_fig.update_layout(
-            height=500,
-            margin=dict(l=10, r=10, t=30, b=10)
-        )
+    tree_fig.update_layout(
+        height=500,
+        margin=dict(l=10, r=10, t=30, b=10)
+    )
 
-        st.plotly_chart(tree_fig, use_container_width=True)
+    st.plotly_chart(tree_fig, use_container_width=True)
 
     st.divider()
+
 
     # =====================================================
     # LDA topic modeling
@@ -758,40 +769,42 @@ if run_button:
 
     if topic_summary.empty:
         st.warning("LDA could not generate topics. Try increasing the number of comments.")
+
     else:
-        st.write("#### Topic Keywords")
+        st.markdown("#### Topic Keywords")
 
-            topic_display = topic_keywords_df.copy()
-            topic_display["topic_keywords"] = topic_display["topic_keywords"].str.wrap(45)
+        topic_display = topic_keywords_df.copy()
+        topic_display["topic_keywords"] = topic_display["topic_keywords"].str.wrap(45)
 
-            st.dataframe(
-                topic_display,
-                use_container_width=True,
-                hide_index=True,
-                height=220
-            )
+        st.dataframe(
+            topic_display,
+            use_container_width=True,
+            hide_index=True,
+            height=220
+        )
 
-        st.write("#### Main Discussion Topics")
+        st.markdown("#### Main Discussion Topics")
 
-            fig = px.bar(
-                topic_summary,
-                x="topic_name",
-                y="comment_count",
-                text="comment_count"
-            )
+        fig = px.bar(
+            topic_summary,
+            x="topic_name",
+            y="comment_count",
+            text="comment_count"
+        )
 
-            fig.update_traces(textposition="outside")
+        fig.update_traces(textposition="outside")
 
-            fig.update_layout(
-                height=420,
-                margin=dict(l=10, r=10, t=20, b=80),
-                xaxis_tickangle=-30,
-                xaxis_title="Topic",
-                yaxis_title="Comment Count"
-            )
+        fig.update_layout(
+            height=420,
+            margin=dict(l=10, r=10, t=20, b=80),
+            xaxis_tickangle=-30,
+            xaxis_title="Topic",
+            yaxis_title="Comment Count"
+        )
 
+        st.plotly_chart(fig, use_container_width=True)
 
-        st.write("Comments with Assigned LDA Topics")
+        st.markdown("#### Comments with Assigned LDA Topics")
 
         st.dataframe(
             df_topic[
