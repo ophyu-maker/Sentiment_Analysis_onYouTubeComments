@@ -39,12 +39,6 @@ st.write(
 # =========================================================
 # API KEY
 # =========================================================
-# Recommended:
-# Create .streamlit/secrets.toml and add:
-#
-# YOUTUBE_API_KEY = "your_api_key_here"
-#
-# Do NOT hardcode your API key in GitHub.
 
 try:
     API_KEY = st.secrets["YOUTUBE_API_KEY"]
