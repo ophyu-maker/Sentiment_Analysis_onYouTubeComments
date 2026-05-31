@@ -1,0 +1,13 @@
+streamlit
+pandas
+numpy
+requests
+plotly
+matplotlib
+wordcloud
+vaderSentiment
+transformers
+torch
+spacy
+gensim
+scipy
