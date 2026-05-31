@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from transformers import pipeline
+from transformers.pipelines import pipeline
 
 import spacy
 from gensim.utils import simple_preprocess
