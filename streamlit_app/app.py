@@ -47,16 +47,6 @@ except Exception:
 
 
 # =========================================================
-# Default videos
-# =========================================================
-# Replace these with your default YouTube video IDs or URLs
-
-DEFAULT_VIDEO_URLS = [
-    "https://www.youtube.com/watch?v=h-l_6617x6A"
-]
-
-
-# =========================================================
 # Helper functions
 # =========================================================
 
@@ -491,14 +481,17 @@ top_words = st.sidebar.slider(
 # Input section
 # =========================================================
 
+DEFAULT_VIDEO_URLS = [
+    "https://www.youtube.com/watch?v=h-l_6617x6A"
+]
+
+
 st.subheader("Analyze Your Own YouTube Video")
 
 user_url = st.text_input(
           "Enter YouTube video URL or Run default video URL",
-          placeholder="https://www.youtube.com/watch?v=h-l_6617x6A"
+          value=DEFAULT_VIDEO_URLS
      )
-
-video_urls = [user_url] if user_url else []
 
 run_button = st.button("Run Analysis", type="primary")
 
@@ -515,12 +508,15 @@ if run_button:
         )
         st.stop()
 
-    if len(video_urls) == 0 or not video_urls[0]:
+    if len(user_url) == 0 or not user_url[0]:
         st.warning("Please enter a YouTube URL.")
         st.stop()
 
-    video_ids = [extract_video_id(url) for url in video_urls]
-    video_ids = [vid for vid in video_ids if vid]
+    video_id = extract_video_id(user_url)
+
+    if not video_id:
+        st.warning("Please enter a valid YouTube URL.")
+        st.stop()
 
     with st.spinner("Fetching YouTube comments..."):
         raw_df = fetch_youtube_comments(
