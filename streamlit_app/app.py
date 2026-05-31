@@ -481,9 +481,8 @@ top_words = st.sidebar.slider(
 # Input section
 # =========================================================
 
-DEFAULT_VIDEO_URLS = [
-    "https://www.youtube.com/watch?v=h-l_6617x6A"
-]
+DEFAULT_VIDEO_URLS ="https://www.youtube.com/watch?v=h-l_6617x6A"
+
 
 
 st.subheader("Analyze Your Own YouTube Video")
