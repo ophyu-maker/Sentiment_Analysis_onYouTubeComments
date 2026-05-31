@@ -484,7 +484,6 @@ top_words = st.sidebar.slider(
 DEFAULT_VIDEO_URLS ="https://www.youtube.com/watch?v=h-l_6617x6A"
 
 
-
 st.subheader("Analyze Your Own YouTube Video")
 
 user_url = st.text_input(
@@ -507,7 +506,7 @@ if run_button:
         )
         st.stop()
 
-    if len(user_url) == 0 or not user_url[0]:
+    if not user_url.strip():
         st.warning("Please enter a YouTube URL.")
         st.stop()
 
@@ -519,7 +518,7 @@ if run_button:
 
     with st.spinner("Fetching YouTube comments..."):
         raw_df = fetch_youtube_comments(
-            video_ids=video_ids,
+            video_ids=video_id,
             api_key=API_KEY,
             max_pages=max_pages
         )
