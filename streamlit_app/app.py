@@ -556,7 +556,7 @@ if run_button:
     # =====================================================
 
     st.subheader("Summary")
-    st.divider()
+
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -572,7 +572,7 @@ if run_button:
     # =====================================================
 
     st.subheader("Sentiment Model Comparison")
-    st.divider()
+   
     comparison_table, comparison_long = create_model_comparison(results_df)
 
     st.markdown("#### Model Comparison Table")
@@ -605,6 +605,7 @@ if run_button:
     )
 
     st.plotly_chart(fig, use_container_width=True)
+    
 
     
 
@@ -716,14 +717,14 @@ if run_button:
             use_container_width=True
         )
 
-    
+    st.divider()
 
     # =====================================================
     # Wordcloud and treemap
     # =====================================================
 
     st.subheader("Word Frequency Analysis")
-    st.divider()
+   
 
     st.markdown("#### Word Cloud")
     wc_fig = create_wordcloud(word_counts)
@@ -747,7 +748,6 @@ if run_button:
     # =====================================================
 
     st.subheader("LDA Topic Modeling")
-    st.divider()
 
     if topic_summary.empty:
         st.warning("LDA could not generate topics. Try increasing the number of comments.")
@@ -808,7 +808,7 @@ if run_button:
     # =====================================================
 
     st.subheader("Download Results")
-    st.divider()
+    
 
     csv = results_df.to_csv(index=False).encode("utf-8")
 
