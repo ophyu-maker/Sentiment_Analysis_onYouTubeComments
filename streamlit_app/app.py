@@ -493,8 +493,8 @@ top_words = st.sidebar.slider(
 
 st.subheader("Analyze Your Own YouTube Video")
 
- user_url = st.text_input(
-         "Enter YouTube video URL or Run default video URL",
+user_url = st.text_input(
+          "Enter YouTube video URL or Run default video URL",
           placeholder="https://www.youtube.com/watch?v=h-l_6617x6A"
      )
 
