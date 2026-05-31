@@ -484,7 +484,7 @@ top_words = st.sidebar.slider(
 DEFAULT_VIDEO_URLS ="https://www.youtube.com/watch?v=h-l_6617x6A"
 
 
-st.subheader("Analyze Your Own YouTube Video")
+st.subheader("Analyze YouTube Video")
 
 user_url = st.text_input(
           "Enter YouTube video URL or Run default video URL",
@@ -829,4 +829,4 @@ if run_button:
         )
 
 else:
-    st.info("Choose a mode from the sidebar, then click **Run Analysis**.")
+    st.info("Choose setting from the sidebar, then click **Run Analysis**.")
