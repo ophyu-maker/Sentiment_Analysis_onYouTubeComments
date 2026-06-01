@@ -18,6 +18,9 @@ from gensim.utils import simple_preprocess
 from gensim import corpora
 from gensim.models import LdaModel
 
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+
 
 # =========================================================
 # Page config
@@ -367,25 +370,64 @@ def create_treemap(word_counts, top_n=10):
 
     return fig
 
+def build_topic_stopwords(user_stopwords_text=""):
+    """
+    Build reusable topic modeling stopwords.
+    Includes:
+    - sklearn English stopwords
+    - generic YouTube/comment stopwords
+    - optional user-entered stopwords
+    """
+
+    youtube_stopwords = {
+        "video", "watch", "watching", "channel", "comment", "comments",
+        "people", "person", "someone", "everyone",
+        "like", "love", "good", "great", "really",
+        "think", "know", "say", "said", "see",
+        "make", "made", "get", "got", "go", "going",
+        "one", "thing", "way", "time", "day",
+        "would", "could", "should", "also",
+        "thank", "thanks", "please"
+    }
+
+    user_stopwords = {
+        word.strip().lower()
+        for word in user_stopwords_text.split(",")
+        if word.strip()
+    }
+
+    final_stopwords = set(ENGLISH_STOP_WORDS).union(youtube_stopwords).union(user_stopwords)
+
+    return final_stopwords
+
 
 # =========================================================
 # LDA topic modeling
 # =========================================================
 
-def run_lda_topic_modeling(df_nlp, num_topics=3, topn=8):
+def run_lda_topic_modeling(df_nlp, num_topics=3, topn=8, user_stopwords_text=""):
     df_topic = df_nlp.copy()
 
-    # Remove comments with no tokens
-    df_topic = df_topic[df_topic["token_clean"].apply(len) > 0].reset_index(drop=True)
+    topic_stopwords = build_topic_stopwords(user_stopwords_text)
 
-    dictionary = corpora.Dictionary(df_topic["token_clean"])
+    df_topic["token_clean_topic"] = df_topic["token_clean"].apply(
+        lambda tokens: [
+            word for word in tokens
+            if word not in topic_stopwords
+            and len(word) > 2
+        ]
+    )
+
+    df_topic = df_topic[df_topic["token_clean_topic"].apply(len) > 0].reset_index(drop=True)
+
+    dictionary = corpora.Dictionary(df_topic["token_clean_topic"])
 
     dictionary.filter_extremes(
         no_below=2,
-        no_above=0.8
+        no_above=0.7
     )
 
-    corpus = [dictionary.doc2bow(tokens) for tokens in df_topic["token_clean"]]
+    corpus = [dictionary.doc2bow(tokens) for tokens in df_topic["token_clean_topic"]]
 
     if len(dictionary) == 0 or len(corpus) == 0:
         return df_topic, pd.DataFrame(), pd.DataFrame()
@@ -445,6 +487,88 @@ def run_lda_topic_modeling(df_nlp, num_topics=3, topn=8):
     topic_summary = topic_summary.sort_values("topic_id")
 
     return df_topic, topic_keywords_df, topic_summary
+
+
+def prepare_topic_text(df_nlp, user_stopwords_text=""):
+    df_topic_text = df_nlp.copy()
+
+    topic_stopwords = build_topic_stopwords(user_stopwords_text)
+
+    df_topic_text["token_clean_topic"] = df_topic_text["token_clean"].apply(
+        lambda tokens: [
+            word for word in tokens
+            if word not in topic_stopwords
+            and len(word) > 2
+        ]
+    )
+
+    df_topic_text["topic_text"] = df_topic_text["token_clean_topic"].apply(
+        lambda tokens: " ".join(tokens)
+    )
+
+    df_topic_text = df_topic_text[df_topic_text["topic_text"].str.len() > 0]
+
+    return df_topic_text
+
+
+def run_ngram_analysis(df_nlp, user_stopwords_text="", top_n=20):
+    df_topic_text = prepare_topic_text(df_nlp, user_stopwords_text)
+
+    if df_topic_text.empty:
+        return pd.DataFrame()
+
+    vectorizer = CountVectorizer(
+        ngram_range=(3, 3),
+        min_df=2,
+        max_df=0.8
+    )
+
+    try:
+        X = vectorizer.fit_transform(df_topic_text["topic_text"])
+    except ValueError:
+        return pd.DataFrame()
+
+    ngram_counts = X.sum(axis=0).A1
+    ngram_names = vectorizer.get_feature_names_out()
+
+    ngram_df = pd.DataFrame({
+        "three_word_phrase": ngram_names,
+        "count": ngram_counts
+    })
+
+    ngram_df = ngram_df.sort_values("count", ascending=False).head(top_n)
+
+    return ngram_df
+
+
+def run_tfidf_analysis(df_nlp, user_stopwords_text="", top_n=20):
+    df_topic_text = prepare_topic_text(df_nlp, user_stopwords_text)
+
+    if df_topic_text.empty:
+        return pd.DataFrame()
+
+    vectorizer = TfidfVectorizer(
+        ngram_range=(1, 2),
+        min_df=2,
+        max_df=0.8
+    )
+
+    try:
+        X = vectorizer.fit_transform(df_topic_text["topic_text"])
+    except ValueError:
+        return pd.DataFrame()
+
+    tfidf_scores = X.mean(axis=0).A1
+    terms = vectorizer.get_feature_names_out()
+
+    tfidf_df = pd.DataFrame({
+        "term": terms,
+        "tfidf_score": tfidf_scores
+    })
+
+    tfidf_df = tfidf_df.sort_values("tfidf_score", ascending=False).head(top_n)
+
+    return tfidf_df
 
 
 # =========================================================
@@ -539,17 +663,13 @@ if run_button:
     st.session_state["results_df"] = results_df
 
     # NLP preprocessing
-    with st.spinner("Preparing text for word cloud, treemap, and LDA topics..."):
+    with st.spinner("Preparing text for word cloud, treemap, and topic modeling..."):
         df_nlp = lemmatize_comments(results_df)
         word_counts = get_word_counts(df_nlp)
 
-    # LDA
-    with st.spinner("Running LDA topic modeling..."):
-        df_topic, topic_keywords_df, topic_summary = run_lda_topic_modeling(
-            df_nlp,
-            num_topics=num_topics,
-            topn=8
-        )
+    st.session_state["df_nlp"] = df_nlp
+    st.session_state["word_counts"] = word_counts
+
 
     # =====================================================
     # KPIs
@@ -744,64 +864,183 @@ if run_button:
 
 
     # =====================================================
-    # LDA topic modeling
+    # Topic modeling section
     # =====================================================
 
-    st.subheader("LDA Topic Modeling")
+    st.subheader("Topic Modeling")
 
-    if topic_summary.empty:
-        st.warning("LDA could not generate topics. Try increasing the number of comments.")
+    st.markdown(
+        "Use the box below to exclude extra words from topic modeling only. "
+        "This will not rerun the sentiment models."
+    )
 
+    default_excluded_words = st.session_state.get("topic_excluded_words", "")
+
+    topic_excluded_words = st.text_input(
+        "Optional words to exclude from topics, separated by commas",
+        value=default_excluded_words,
+        placeholder="Example: candace, owens, charlie"
+    )
+
+    rerun_topics_button = st.button("Rerun Topic Modeling Only")
+
+    if rerun_topics_button:
+        st.session_state["topic_excluded_words"] = topic_excluded_words
+
+    if "df_nlp" not in st.session_state:
+        st.info("Run the full analysis first before using topic modeling.")
     else:
-        st.markdown("#### Topic Keywords")
-
-        topic_display = topic_keywords_df.copy()
-        topic_display["topic_keywords"] = topic_display["topic_keywords"].str.wrap(45)
-
-        st.dataframe(
-            topic_display,
-            use_container_width=True,
-            hide_index=True,
-            height=220
+        df_nlp_for_topics = st.session_state["df_nlp"]
+        excluded_words_for_topics = st.session_state.get(
+            "topic_excluded_words",
+            topic_excluded_words
         )
 
-        st.markdown("#### Main Discussion Topics")
-
-        fig = px.bar(
-            topic_summary,
-            x="topic_name",
-            y="comment_count",
-            text="comment_count"
+        lda_tab, ngram_tab, tfidf_tab = st.tabs(
+            ["LDA Topics", "N-gram Phrases", "TF-IDF Keywords"]
         )
 
-        fig.update_traces(textposition="outside")
+        with lda_tab:
+            with st.spinner("Running LDA topic modeling..."):
+                df_topic, topic_keywords_df, topic_summary = run_lda_topic_modeling(
+                    df_nlp_for_topics,
+                    num_topics=num_topics,
+                    topn=8,
+                    user_stopwords_text=excluded_words_for_topics
+                )
 
-        fig.update_layout(
-            height=420,
-            margin=dict(l=10, r=10, t=20, b=80),
-            xaxis_tickangle=-30,
-            xaxis_title="Topic",
-            yaxis_title="Comment Count"
-        )
+            if topic_summary.empty:
+                st.warning("LDA could not generate topics. Try increasing the number of comments or removing fewer words.")
+    
+            else:
+                st.markdown("#### Topic Keywords")
 
-        st.plotly_chart(fig, use_container_width=True)
+                topic_display = topic_keywords_df.copy()
+                topic_display["topic_keywords"] = topic_display["topic_keywords"].str.wrap(45)
 
-        st.markdown("#### Comments with Assigned LDA Topics")
+                st.dataframe(
+                    topic_display,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=220
+                )
 
-        st.dataframe(
-            df_topic[
-                [
-                    "date",
-                    "comment",
-                    "topic_id",
-                    "topic_score"
-                ]
-            ].sort_values("topic_score", ascending=False).head(50),
-            use_container_width=True,
-            hide_index=True
-        )
+                st.markdown("#### Main Discussion Topics")
 
-    st.divider()
+                fig = px.bar(
+                    topic_summary,
+                    x="topic_name",
+                    y="comment_count",
+                    text="comment_count"
+                )
+
+                fig.update_traces(textposition="outside")
+
+                fig.update_layout(
+                    height=420,
+                    margin=dict(l=10, r=10, t=20, b=80),
+                    xaxis_tickangle=-30,
+                    xaxis_title="Topic",
+                    yaxis_title="Comment Count"
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+                st.markdown("#### Comments with Assigned LDA Topics")
+
+                st.dataframe(
+                    df_topic[
+                        [
+                            "date",
+                            "comment",
+                            "topic_id",
+                            "topic_score"
+                        ]
+                    ].sort_values("topic_score", ascending=False).head(50),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+        with ngram_tab:
+            st.markdown("#### Top 3-Word Phrases")
+
+            ngram_df = run_ngram_analysis(
+                df_nlp_for_topics,
+                user_stopwords_text=excluded_words_for_topics,
+                top_n=20
+            )
+
+            if ngram_df.empty:
+                st.warning("No 3-word phrases found. Try increasing comment count or lowering filtering rules.")
+            else:
+                st.dataframe(
+                    ngram_df,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                fig = px.bar(
+                    ngram_df.sort_values("count"),
+                    x="count",
+                    y="three_word_phrase",
+                    orientation="h",
+                    text="count",
+                    title="Top Repeated 3-Word Phrases"
+                )
+
+                fig.update_traces(textposition="outside")
+
+                fig.update_layout(
+                    height=600,
+                    margin=dict(l=10, r=10, t=40, b=40),
+                    xaxis_title="Frequency",
+                    yaxis_title="3-Word Phrase"
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+        with tfidf_tab:
+            st.markdown("#### Top TF-IDF Keywords and Phrases")
+
+            tfidf_df = run_tfidf_analysis(
+                df_nlp_for_topics,
+                user_stopwords_text=excluded_words_for_topics,
+                top_n=20
+            )
+
+            if tfidf_df.empty:
+                st.warning("No TF-IDF terms found. Try increasing comment count or removing fewer words.")
+            else:
+                st.dataframe(
+                    tfidf_df,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                fig = px.bar(
+                    tfidf_df.sort_values("tfidf_score"),
+                    x="tfidf_score",
+                    y="term",
+                    orientation="h",
+                    text="tfidf_score",
+                    title="Top TF-IDF Keywords and Phrases"
+                )
+
+                fig.update_traces(
+                    texttemplate="%{text:.3f}",
+                    textposition="outside"
+                )
+
+                fig.update_layout(
+                    height=600,
+                    margin=dict(l=10, r=10, t=40, b=40),
+                    xaxis_title="Average TF-IDF Score",
+                    yaxis_title="Keyword / Phrase"
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+        st.session_state["latest_df_topic"] = df_topic if "df_topic" in locals() else None
 
     # =====================================================
     # Download results
@@ -819,15 +1058,16 @@ if run_button:
         mime="text/csv"
     )
 
-    if not topic_summary.empty:
-        topic_csv = df_topic.to_csv(index=False).encode("utf-8")
+latest_df_topic = st.session_state.get("latest_df_topic")
 
-        st.download_button(
-            label="Download topic results as CSV",
-            data=topic_csv,
-            file_name="youtube_comment_topic_results.csv",
-            mime="text/csv"
-        )
+if latest_df_topic is not None and not latest_df_topic.empty:
+    topic_csv = latest_df_topic.to_csv(index=False).encode("utf-8")
 
+    st.download_button(
+        label="Download topic results as CSV",
+        data=topic_csv,
+        file_name="youtube_comment_topic_results.csv",
+           mime="text/csv"
+     )
 else:
     st.info("Choose setting from the sidebar, then click **Run Analysis**.")
