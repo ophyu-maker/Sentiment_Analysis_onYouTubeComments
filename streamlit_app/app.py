@@ -791,7 +791,7 @@ st.markdown(
     """
     <div class="section-title">
         <div class="section-accent"></div>
-        <h2>Sentiment Model Comparison</h2>
+        <h2 style="color: #2f80ed;">Sentiment Model Comparison</h2>
     </div>
     """,
     unsafe_allow_html=True
@@ -840,7 +840,7 @@ st.markdown(
     """
     <div class="section-title">
         <div class="section-accent"></div>
-        <h2>Individual Sentiment Results</h2>
+        <h2 style="color: #2f80ed;">Individual Sentiment Results</h2>
     </div>
     """,
     unsafe_allow_html=True
@@ -959,7 +959,7 @@ st.markdown(
     """
     <div class="section-title">
         <div class="section-accent"></div>
-        <h2>Word Frequency Analysis</h2>
+        <h2 style="color: #2f80ed;">Word Frequency Analysis</h2>
     </div>
     """,
     unsafe_allow_html=True
@@ -990,7 +990,7 @@ st.markdown(
     """
     <div class="section-title">
         <div class="section-accent"></div>
-        <h2>Topic Modeling</h2>
+        <h2 style="color: #2f80ed;">Topic Modeling</h2>
     </div>
     """,
     unsafe_allow_html=True
@@ -1180,7 +1180,7 @@ st.markdown(
     """
     <div class="section-title">
         <div class="section-accent"></div>
-        <h2>Download Results</h2>
+        <h2 style="color: #2f80ed;">Download Results</h2>
     </div>
     """,
     unsafe_allow_html=True
