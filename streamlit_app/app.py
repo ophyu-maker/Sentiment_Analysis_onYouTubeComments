@@ -35,7 +35,7 @@ st.set_page_config(
 st.title("📊 YouTube Comment Sentiment Analysis")
 st.write(
     "Analyze YouTube comments using VADER, DistilBERT, RoBERTa, "
-    "word frequency, word cloud, treemap, and topic modeling."
+    "word frequency, word cloud, treemap, and LDA topic modeling."
 )
 
 
@@ -791,7 +791,7 @@ st.markdown(
     """
     <div class="section-title">
         <div class="section-accent"></div>
-        <h2 style="color: #2f80ed !important;">Sentiment Model Comparison</h2>
+        <h2 style="color: #2f80ed;">Sentiment Model Comparison</h2>
     </div>
     """,
     unsafe_allow_html=True
@@ -799,10 +799,7 @@ st.markdown(
 
 comparison_table, comparison_long = create_model_comparison(results_df)
 
-st.markdown(
-    "<h4 style='color: #f2994a !important;'>Model Comparison Table</h4>",
-    unsafe_allow_html=True
-)
+st.markdown("#### Model Comparison Table")
 
 st.dataframe(
     comparison_table,
@@ -810,11 +807,7 @@ st.dataframe(
     hide_index=True
 )
 
-
-st.markdown(
-    "<h4 style='color: #f2994a !important;'>Sentiment Distribution Across 3 Models</h4>",
-    unsafe_allow_html=True
-)
+st.markdown("#### Sentiment Distribution Across 3 Models")
 
 fig = px.bar(
     comparison_long,
@@ -972,7 +965,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown("Word Cloud")
+st.markdown("#### Word Cloud")
 wc_fig = create_wordcloud(word_counts)
 st.pyplot(wc_fig, use_container_width=True)
 
@@ -1049,10 +1042,7 @@ with lda_tab:
         st.warning("LDA could not generate topics. Try increasing the number of comments or removing fewer words.")
 
     else:
-        st.markdown("<h4 style='color: #f2994a !important;'>Topic Keywords</h4>",unsafe_allow_html=True)
-    
-    
-
+        st.markdown("#### Topic Keywords")
 
         topic_display = topic_keywords_df.copy()
         topic_display["topic_keywords"] = topic_display["topic_keywords"].str.wrap(45)
@@ -1064,7 +1054,7 @@ with lda_tab:
             height=220
         )
 
-        st.markdown("<h4 style='color: #f2994a !important;'>Main Discussion Topics</h4>",unsafe_allow_html=True)
+        st.markdown("#### Main Discussion Topics")
 
         fig = px.bar(
             topic_summary,
@@ -1085,7 +1075,7 @@ with lda_tab:
 
         st.plotly_chart(fig, use_container_width=True)
 
-        st.markdown("<h4 style='color: #f2994a !important;'>Comments with Assigned LDA Topics</h4>",unsafe_allow_html=True)
+        st.markdown("#### Comments with Assigned LDA Topics")
 
         st.dataframe(
             df_topic[
@@ -1101,7 +1091,7 @@ with lda_tab:
         )
 
 with ngram_tab:
-    st.markdown("<h4 style='color: #f2994a !important;'>Top 3-Word Phrases</h4>",unsafe_allow_html=True)
+    st.markdown("#### Top 3-Word Phrases")
 
     ngram_df = run_ngram_analysis(
         df_nlp,
@@ -1139,7 +1129,7 @@ with ngram_tab:
         st.plotly_chart(fig, use_container_width=True)
 
 with tfidf_tab:
-    st.markdown("<h4 style='color: #f2994a !important;'>Top TF-IDF Keywords and Phrases</h4>",unsafe_allow_html=True)
+    st.markdown("#### Top TF-IDF Keywords and Phrases")
 
     tfidf_df = run_tfidf_analysis(
         df_nlp,
