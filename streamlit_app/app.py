@@ -370,6 +370,7 @@ def create_treemap(word_counts, top_n=10):
 
     return fig
 
+
 def build_topic_stopwords(user_stopwords_text=""):
     """
     Build reusable topic modeling stopwords.
@@ -382,9 +383,9 @@ def build_topic_stopwords(user_stopwords_text=""):
     youtube_stopwords = {
         "video", "watch", "watching", "channel", "comment", "comments",
         "people", "person", "someone", "everyone",
-        "like", "love", "good", "great", "really",
+        "really",
         "think", "know", "say", "said", "see",
-        "make", "made", "get", "got", "go", "going",
+        "go", "going",
         "one", "thing", "way", "time", "day",
         "would", "could", "should", "also",
         "thank", "thanks", "please"
@@ -605,7 +606,7 @@ top_words = st.sidebar.slider(
 # Input section
 # =========================================================
 
-DEFAULT_VIDEO_URLS ="https://www.youtube.com/watch?v=h-l_6617x6A"
+DEFAULT_VIDEO_URLS = "https://www.youtube.com/watch?v=h-l_6617x6A"
 
 
 st.subheader("Analyze YouTube Video")
@@ -656,407 +657,417 @@ if run_button:
     with st.expander("Preview raw comments"):
         st.dataframe(raw_df.head(20), use_container_width=True)
 
-    # Sentiment analysis
+    # Sentiment analysis runs only when Run Analysis is clicked.
     with st.spinner("Running VADER, DistilBERT, and RoBERTa sentiment models..."):
         results_df = run_all_sentiment_models(raw_df)
 
-    st.session_state["results_df"] = results_df
-
-    # NLP preprocessing
+    # NLP preprocessing runs once after sentiment analysis.
     with st.spinner("Preparing text for word cloud, treemap, and topic modeling..."):
         df_nlp = lemmatize_comments(results_df)
         word_counts = get_word_counts(df_nlp)
 
+    # Save results so topic modeling can be rerun without rerunning sentiment models.
+    st.session_state["results_df"] = results_df
     st.session_state["df_nlp"] = df_nlp
     st.session_state["word_counts"] = word_counts
+    st.session_state["latest_df_topic"] = None
 
 
-    # =====================================================
-    # KPIs
-    # =====================================================
+if "results_df" not in st.session_state:
+    st.info("Choose setting from the sidebar, then click **Run Analysis**.")
+    st.stop()
 
-    st.subheader("Summary")
+results_df = st.session_state["results_df"]
+df_nlp = st.session_state["df_nlp"]
+word_counts = st.session_state["word_counts"]
 
 
-    col1, col2, col3, col4 = st.columns(4)
+# =====================================================
+# KPIs
+# =====================================================
 
-    col1.metric("Total Comments", f"{len(results_df):,}")
-    col2.metric("Unique Videos", results_df["video_id"].nunique())
-    col3.metric("Avg Comment Length", round(results_df["clean_comment"].str.len().mean(), 1))
-    col4.metric("Total Unique Words", f"{len(word_counts):,}")
+st.subheader("Summary")
 
-    st.divider()
+col1, col2, col3, col4 = st.columns(4)
 
-    # =====================================================
-    # Sentiment comparison
-    # =====================================================
+col1.metric("Total Comments", f"{len(results_df):,}")
+col2.metric("Unique Videos", results_df["video_id"].nunique())
+col3.metric("Avg Comment Length", round(results_df["clean_comment"].str.len().mean(), 1))
+col4.metric("Total Unique Words", f"{len(word_counts):,}")
 
-    st.subheader("Sentiment Model Comparison")
-   
-    comparison_table, comparison_long = create_model_comparison(results_df)
+st.divider()
 
-    st.markdown("#### Model Comparison Table")
 
-    st.dataframe(
-        comparison_table,
-        use_container_width=True,
-        hide_index=True
+# =====================================================
+# Sentiment comparison
+# =====================================================
+
+st.subheader("Sentiment Model Comparison")
+
+comparison_table, comparison_long = create_model_comparison(results_df)
+
+st.markdown("#### Model Comparison Table")
+
+st.dataframe(
+    comparison_table,
+    use_container_width=True,
+    hide_index=True
+)
+
+st.markdown("#### Sentiment Distribution Across 3 Models")
+
+fig = px.bar(
+    comparison_long,
+    x="sentiment_label",
+    y="comment_count",
+    color="model",
+    barmode="group",
+    text="comment_count"
+)
+
+fig.update_traces(textposition="outside")
+
+fig.update_layout(
+    height=500,
+    margin=dict(l=10, r=10, t=30, b=40),
+    xaxis_title="Sentiment Label",
+    yaxis_title="Comment Count",
+    legend_title="Model"
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
+
+# =====================================================
+# Individual model charts
+# =====================================================
+
+st.subheader("Individual Sentiment Results")
+
+tab1, tab2, tab3 = st.tabs(["VADER", "DistilBERT", "RoBERTa"])
+
+with tab1:
+    vader_summary = (
+        results_df["vader_label"]
+        .value_counts()
+        .reset_index()
     )
-    
-    st.markdown("#### Sentiment Distribution Across 3 Models")
+    vader_summary.columns = ["sentiment_label", "comment_count"]
 
-    fig = px.bar(
-        comparison_long,
-        x="sentiment_label",
-        y="comment_count",
-        color="model",
-        barmode="group",
-        text="comment_count"
+    fig = px.pie(
+        vader_summary,
+        names="sentiment_label",
+        values="comment_count",
+        title="VADER Sentiment Distribution"
     )
-
-    fig.update_traces(textposition="outside")
-
-    fig.update_layout(
-        height=500,
-        margin=dict(l=10, r=10, t=30, b=40),
-        xaxis_title="Sentiment Label",
-        yaxis_title="Comment Count",
-        legend_title="Model"
-    )
-
     st.plotly_chart(fig, use_container_width=True)
-    
 
-    
-
-    # =====================================================
-    # Individual model charts
-    # =====================================================
-
-    st.subheader("Individual Sentiment Results")
-
-    tab1, tab2, tab3 = st.tabs(["VADER", "DistilBERT", "RoBERTa"])
-
-    with tab1:
-        vader_summary = (
-            results_df["vader_label"]
-            .value_counts()
-            .reset_index()
-        )
-        vader_summary.columns = ["sentiment_label", "comment_count"]
-
-        fig = px.pie(
-            vader_summary,
-            names="sentiment_label",
-            values="comment_count",
-            title="VADER Sentiment Distribution"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-        st.write("Top Positive Comments")
-        st.dataframe(
-            results_df.sort_values("vader_score", ascending=False)[
-                ["date", "comment", "vader_label", "vader_score"]
-            ].head(10),
-            use_container_width=True
-        )
-
-        st.write("Top Negative Comments")
-        st.dataframe(
-            results_df.sort_values("vader_score", ascending=True)[
-                ["date", "comment", "vader_label", "vader_score"]
-            ].head(10),
-            use_container_width=True
-        )
-
-    with tab2:
-        distilbert_summary = (
-            results_df["distilbert_label"]
-            .value_counts()
-            .reset_index()
-        )
-        distilbert_summary.columns = ["sentiment_label", "comment_count"]
-
-        fig = px.pie(
-            distilbert_summary,
-            names="sentiment_label",
-            values="comment_count",
-            title="DistilBERT Sentiment Distribution"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-        st.write("Top Positive Comments")
-        st.dataframe(
-            results_df[results_df["distilbert_label"] == "positive"]
-            .sort_values("distilbert_score", ascending=False)[
-                ["date", "comment", "distilbert_label", "distilbert_score"]
-            ].head(10),
-            use_container_width=True
-        )
-
-        st.write("Top Negative Comments")
-        st.dataframe(
-            results_df[results_df["distilbert_label"] == "negative"]
-            .sort_values("distilbert_score", ascending=False)[
-                ["date", "comment", "distilbert_label", "distilbert_score"]
-            ].head(10),
-            use_container_width=True
-        )
-
-    with tab3:
-        roberta_summary = (
-            results_df["roberta_label"]
-            .value_counts()
-            .reset_index()
-        )
-        roberta_summary.columns = ["sentiment_label", "comment_count"]
-
-        fig = px.pie(
-            roberta_summary,
-            names="sentiment_label",
-            values="comment_count",
-            title="RoBERTa Sentiment Distribution"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-        st.write("Top Positive Comments")
-        st.dataframe(
-            results_df[results_df["roberta_label"] == "positive"]
-            .sort_values("roberta_score", ascending=False)[
-                ["date", "comment", "roberta_label", "roberta_score"]
-            ].head(10),
-            use_container_width=True
-        )
-
-        st.write("Top Negative Comments")
-        st.dataframe(
-            results_df[results_df["roberta_label"] == "negative"]
-            .sort_values("roberta_score", ascending=False)[
-                ["date", "comment", "roberta_label", "roberta_score"]
-            ].head(10),
-            use_container_width=True
-        )
-
-    st.divider()
-
-    # =====================================================
-    # Wordcloud and treemap
-    # =====================================================
-
-    st.subheader("Word Frequency Analysis")
-   
-
-    st.markdown("#### Word Cloud")
-    wc_fig = create_wordcloud(word_counts)
-    st.pyplot(wc_fig, use_container_width=True)
-
-    st.markdown(f"#### Top {top_words} Words Treemap")
-    tree_fig = create_treemap(word_counts, top_n=top_words)
-
-    tree_fig.update_layout(
-        height=500,
-        margin=dict(l=10, r=10, t=30, b=10)
+    st.write("Top Positive Comments")
+    st.dataframe(
+        results_df.sort_values("vader_score", ascending=False)[
+            ["date", "comment", "vader_label", "vader_score"]
+        ].head(10),
+        use_container_width=True
     )
 
-    st.plotly_chart(tree_fig, use_container_width=True)
-
-    st.divider()
-
-
-    # =====================================================
-    # Topic modeling section
-    # =====================================================
-
-    st.subheader("Topic Modeling")
-
-    st.markdown(
-        "Use the box below to exclude extra words from topic modeling only. "
-        "This will not rerun the sentiment models."
+    st.write("Top Negative Comments")
+    st.dataframe(
+        results_df.sort_values("vader_score", ascending=True)[
+            ["date", "comment", "vader_label", "vader_score"]
+        ].head(10),
+        use_container_width=True
     )
 
-    default_excluded_words = st.session_state.get("topic_excluded_words", "")
+with tab2:
+    distilbert_summary = (
+        results_df["distilbert_label"]
+        .value_counts()
+        .reset_index()
+    )
+    distilbert_summary.columns = ["sentiment_label", "comment_count"]
 
-    topic_excluded_words = st.text_input(
-        "Optional words to exclude from topics, separated by commas",
-        value=default_excluded_words,
-        placeholder="Example: candace, owens, charlie"
+    fig = px.pie(
+        distilbert_summary,
+        names="sentiment_label",
+        values="comment_count",
+        title="DistilBERT Sentiment Distribution"
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.write("Top Positive Comments")
+    st.dataframe(
+        results_df[results_df["distilbert_label"] == "positive"]
+        .sort_values("distilbert_score", ascending=False)[
+            ["date", "comment", "distilbert_label", "distilbert_score"]
+        ].head(10),
+        use_container_width=True
     )
 
-    rerun_topics_button = st.button("Rerun Topic Modeling Only")
+    st.write("Top Negative Comments")
+    st.dataframe(
+        results_df[results_df["distilbert_label"] == "negative"]
+        .sort_values("distilbert_score", ascending=False)[
+            ["date", "comment", "distilbert_label", "distilbert_score"]
+        ].head(10),
+        use_container_width=True
+    )
 
-    if rerun_topics_button:
-        st.session_state["topic_excluded_words"] = topic_excluded_words
+with tab3:
+    roberta_summary = (
+        results_df["roberta_label"]
+        .value_counts()
+        .reset_index()
+    )
+    roberta_summary.columns = ["sentiment_label", "comment_count"]
 
-    if "df_nlp" not in st.session_state:
-        st.info("Run the full analysis first before using topic modeling.")
+    fig = px.pie(
+        roberta_summary,
+        names="sentiment_label",
+        values="comment_count",
+        title="RoBERTa Sentiment Distribution"
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.write("Top Positive Comments")
+    st.dataframe(
+        results_df[results_df["roberta_label"] == "positive"]
+        .sort_values("roberta_score", ascending=False)[
+            ["date", "comment", "roberta_label", "roberta_score"]
+        ].head(10),
+        use_container_width=True
+    )
+
+    st.write("Top Negative Comments")
+    st.dataframe(
+        results_df[results_df["roberta_label"] == "negative"]
+        .sort_values("roberta_score", ascending=False)[
+            ["date", "comment", "roberta_label", "roberta_score"]
+        ].head(10),
+        use_container_width=True
+    )
+
+st.divider()
+
+
+# =====================================================
+# Wordcloud and treemap
+# =====================================================
+
+st.subheader("Word Frequency Analysis")
+
+st.markdown("#### Word Cloud")
+wc_fig = create_wordcloud(word_counts)
+st.pyplot(wc_fig, use_container_width=True)
+
+st.markdown(f"#### Top {top_words} Words Treemap")
+tree_fig = create_treemap(word_counts, top_n=top_words)
+
+tree_fig.update_layout(
+    height=500,
+    margin=dict(l=10, r=10, t=30, b=10)
+)
+
+st.plotly_chart(tree_fig, use_container_width=True)
+
+st.divider()
+
+
+# =====================================================
+# Topic modeling section
+# =====================================================
+
+st.subheader("Topic Modeling")
+
+st.markdown(
+    "Use the box below to exclude extra words from topic modeling only. "
+    "This will not rerun the sentiment models."
+)
+
+
+def save_topic_excluded_words():
+    st.session_state["topic_excluded_words"] = st.session_state["topic_excluded_words_input"]
+
+
+if "topic_excluded_words" not in st.session_state:
+    st.session_state["topic_excluded_words"] = ""
+
+st.text_input(
+    "Optional words to exclude from topics, separated by commas",
+    value=st.session_state["topic_excluded_words"],
+    placeholder="Example: people, like, lol",
+    key="topic_excluded_words_input"
+)
+
+st.button(
+    "Rerun Topic Modeling Only",
+    on_click=save_topic_excluded_words
+)
+
+excluded_words_for_topics = st.session_state.get("topic_excluded_words", "")
+
+lda_tab, ngram_tab, tfidf_tab = st.tabs(
+    ["LDA Topics", "N-gram Phrases", "TF-IDF Keywords"]
+)
+
+with lda_tab:
+    with st.spinner("Running LDA topic modeling..."):
+        df_topic, topic_keywords_df, topic_summary = run_lda_topic_modeling(
+            df_nlp,
+            num_topics=num_topics,
+            topn=8,
+            user_stopwords_text=excluded_words_for_topics
+        )
+
+    st.session_state["latest_df_topic"] = df_topic if not df_topic.empty else None
+
+    if topic_summary.empty:
+        st.warning("LDA could not generate topics. Try increasing the number of comments or removing fewer words.")
+
     else:
-        df_nlp_for_topics = st.session_state["df_nlp"]
-        excluded_words_for_topics = st.session_state.get(
-            "topic_excluded_words",
-            topic_excluded_words
+        st.markdown("#### Topic Keywords")
+
+        topic_display = topic_keywords_df.copy()
+        topic_display["topic_keywords"] = topic_display["topic_keywords"].str.wrap(45)
+
+        st.dataframe(
+            topic_display,
+            use_container_width=True,
+            hide_index=True,
+            height=220
         )
 
-        lda_tab, ngram_tab, tfidf_tab = st.tabs(
-            ["LDA Topics", "N-gram Phrases", "TF-IDF Keywords"]
+        st.markdown("#### Main Discussion Topics")
+
+        fig = px.bar(
+            topic_summary,
+            x="topic_name",
+            y="comment_count",
+            text="comment_count"
         )
 
-        with lda_tab:
-            with st.spinner("Running LDA topic modeling..."):
-                df_topic, topic_keywords_df, topic_summary = run_lda_topic_modeling(
-                    df_nlp_for_topics,
-                    num_topics=num_topics,
-                    topn=8,
-                    user_stopwords_text=excluded_words_for_topics
-                )
+        fig.update_traces(textposition="outside")
 
-            if topic_summary.empty:
-                st.warning("LDA could not generate topics. Try increasing the number of comments or removing fewer words.")
-    
-            else:
-                st.markdown("#### Topic Keywords")
+        fig.update_layout(
+            height=420,
+            margin=dict(l=10, r=10, t=20, b=80),
+            xaxis_tickangle=-30,
+            xaxis_title="Topic",
+            yaxis_title="Comment Count"
+        )
 
-                topic_display = topic_keywords_df.copy()
-                topic_display["topic_keywords"] = topic_display["topic_keywords"].str.wrap(45)
+        st.plotly_chart(fig, use_container_width=True)
 
-                st.dataframe(
-                    topic_display,
-                    use_container_width=True,
-                    hide_index=True,
-                    height=220
-                )
+        st.markdown("#### Comments with Assigned LDA Topics")
 
-                st.markdown("#### Main Discussion Topics")
+        st.dataframe(
+            df_topic[
+                [
+                    "date",
+                    "comment",
+                    "topic_id",
+                    "topic_score"
+                ]
+            ].sort_values("topic_score", ascending=False).head(50),
+            use_container_width=True,
+            hide_index=True
+        )
 
-                fig = px.bar(
-                    topic_summary,
-                    x="topic_name",
-                    y="comment_count",
-                    text="comment_count"
-                )
+with ngram_tab:
+    st.markdown("#### Top 3-Word Phrases")
 
-                fig.update_traces(textposition="outside")
-
-                fig.update_layout(
-                    height=420,
-                    margin=dict(l=10, r=10, t=20, b=80),
-                    xaxis_tickangle=-30,
-                    xaxis_title="Topic",
-                    yaxis_title="Comment Count"
-                )
-
-                st.plotly_chart(fig, use_container_width=True)
-
-                st.markdown("#### Comments with Assigned LDA Topics")
-
-                st.dataframe(
-                    df_topic[
-                        [
-                            "date",
-                            "comment",
-                            "topic_id",
-                            "topic_score"
-                        ]
-                    ].sort_values("topic_score", ascending=False).head(50),
-                    use_container_width=True,
-                    hide_index=True
-                )
-
-        with ngram_tab:
-            st.markdown("#### Top 3-Word Phrases")
-
-            ngram_df = run_ngram_analysis(
-                df_nlp_for_topics,
-                user_stopwords_text=excluded_words_for_topics,
-                top_n=20
-            )
-
-            if ngram_df.empty:
-                st.warning("No 3-word phrases found. Try increasing comment count or lowering filtering rules.")
-            else:
-                st.dataframe(
-                    ngram_df,
-                    use_container_width=True,
-                    hide_index=True
-                )
-
-                fig = px.bar(
-                    ngram_df.sort_values("count"),
-                    x="count",
-                    y="three_word_phrase",
-                    orientation="h",
-                    text="count",
-                    title="Top Repeated 3-Word Phrases"
-                )
-
-                fig.update_traces(textposition="outside")
-
-                fig.update_layout(
-                    height=600,
-                    margin=dict(l=10, r=10, t=40, b=40),
-                    xaxis_title="Frequency",
-                    yaxis_title="3-Word Phrase"
-                )
-
-                st.plotly_chart(fig, use_container_width=True)
-
-        with tfidf_tab:
-            st.markdown("#### Top TF-IDF Keywords and Phrases")
-
-            tfidf_df = run_tfidf_analysis(
-                df_nlp_for_topics,
-                user_stopwords_text=excluded_words_for_topics,
-                top_n=20
-            )
-
-            if tfidf_df.empty:
-                st.warning("No TF-IDF terms found. Try increasing comment count or removing fewer words.")
-            else:
-                st.dataframe(
-                    tfidf_df,
-                    use_container_width=True,
-                    hide_index=True
-                )
-
-                fig = px.bar(
-                    tfidf_df.sort_values("tfidf_score"),
-                    x="tfidf_score",
-                    y="term",
-                    orientation="h",
-                    text="tfidf_score",
-                    title="Top TF-IDF Keywords and Phrases"
-                )
-
-                fig.update_traces(
-                    texttemplate="%{text:.3f}",
-                    textposition="outside"
-                )
-
-                fig.update_layout(
-                    height=600,
-                    margin=dict(l=10, r=10, t=40, b=40),
-                    xaxis_title="Average TF-IDF Score",
-                    yaxis_title="Keyword / Phrase"
-                )
-
-                st.plotly_chart(fig, use_container_width=True)
-
-        st.session_state["latest_df_topic"] = df_topic if "df_topic" in locals() else None
-
-    # =====================================================
-    # Download results
-    # =====================================================
-
-    st.subheader("Download Results")
-    
-
-    csv = results_df.to_csv(index=False).encode("utf-8")
-
-    st.download_button(
-        label="Download sentiment results as CSV",
-        data=csv,
-        file_name="youtube_comment_sentiment_results.csv",
-        mime="text/csv"
+    ngram_df = run_ngram_analysis(
+        df_nlp,
+        user_stopwords_text=excluded_words_for_topics,
+        top_n=20
     )
+
+    if ngram_df.empty:
+        st.warning("No 3-word phrases found. Try increasing comment count or lowering filtering rules.")
+    else:
+        st.dataframe(
+            ngram_df,
+            use_container_width=True,
+            hide_index=True
+        )
+
+        fig = px.bar(
+            ngram_df.sort_values("count"),
+            x="count",
+            y="three_word_phrase",
+            orientation="h",
+            text="count",
+            title="Top Repeated 3-Word Phrases"
+        )
+
+        fig.update_traces(textposition="outside")
+
+        fig.update_layout(
+            height=600,
+            margin=dict(l=10, r=10, t=40, b=40),
+            xaxis_title="Frequency",
+            yaxis_title="3-Word Phrase"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+with tfidf_tab:
+    st.markdown("#### Top TF-IDF Keywords and Phrases")
+
+    tfidf_df = run_tfidf_analysis(
+        df_nlp,
+        user_stopwords_text=excluded_words_for_topics,
+        top_n=20
+    )
+
+    if tfidf_df.empty:
+        st.warning("No TF-IDF terms found. Try increasing comment count or removing fewer words.")
+    else:
+        st.dataframe(
+            tfidf_df,
+            use_container_width=True,
+            hide_index=True
+        )
+
+        fig = px.bar(
+            tfidf_df.sort_values("tfidf_score"),
+            x="tfidf_score",
+            y="term",
+            orientation="h",
+            text="tfidf_score",
+            title="Top TF-IDF Keywords and Phrases"
+        )
+
+        fig.update_traces(
+            texttemplate="%{text:.3f}",
+            textposition="outside"
+        )
+
+        fig.update_layout(
+            height=600,
+            margin=dict(l=10, r=10, t=40, b=40),
+            xaxis_title="Average TF-IDF Score",
+            yaxis_title="Keyword / Phrase"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+st.divider()
+
+
+# =====================================================
+# Download results
+# =====================================================
+
+st.subheader("Download Results")
+
+csv = results_df.to_csv(index=False).encode("utf-8")
+
+st.download_button(
+    label="Download sentiment results as CSV",
+    data=csv,
+    file_name="youtube_comment_sentiment_results.csv",
+    mime="text/csv"
+)
 
 latest_df_topic = st.session_state.get("latest_df_topic")
 
@@ -1067,7 +1078,5 @@ if latest_df_topic is not None and not latest_df_topic.empty:
         label="Download topic results as CSV",
         data=topic_csv,
         file_name="youtube_comment_topic_results.csv",
-           mime="text/csv"
-     )
-else:
-    st.info("Choose setting from the sidebar, then click **Run Analysis**.")
+        mime="text/csv"
+    )
