@@ -70,23 +70,26 @@ The word frequency results are used to create:
 - A word cloud
 - A treemap
 
-### 7. LDA Topic Modeling
+### 7. Topic Modeling
 
-The cleaned tokens are converted into a dictionary and corpus using Gensim.
+Multiple NLP techniques are used to identify common discussion patterns in the YouTube comments.
 
-The LDA model is trained on the comment corpus. Each comment is assigned to the topic with the highest probability.
+For topic modeling, the cleaned tokens are converted into a dictionary and corpus using Gensim. Then Latent Dirichlet Allocation, also known as LDA, is applied to group comments into a selected number of topics based on word patterns.
+The LDA model returns the top keywords for each topic, and the app creates a readable topic name using the most important keywords.
 
-The app also extracts the top keywords for each topic and creates a readable topic name using the most important keywords.
+In addition to LDA, N-gram analysis is also used to extract common phrases from the comments. This includes frequently repeated three-word phrases, which can help capture meaning that may not be clear from single words alone.
 
-### 8. Topic Score Assignment
+TF-IDF keyword extraction is used to identify important words in the comment dataset. TF-IDF gives more weight to words that are meaningful within the dataset and less weight to very common words that appear across many comments.
 
-For each comment, the LDA model returns topic probabilities.
+Together, LDA, N-gram analysis, and TF-IDF provide different ways to explore the main themes and keywords in the YouTube comments.
 
-The app selects the topic with the highest probability as the dominant topic.
+### 8. Topic and Keyword Score Assignment
 
-The highest probability is saved as the topic score.
+For LDA analysis, model returns topic probabilites and highest probabilities are selected as the dominant topic
 
-A higher topic score means the comment is more strongly associated with that topic.
+For N-gram analysis, the most frequently occurring phrases are identified across the cleaned comments.
+
+For TF-IDF analysis, keyword importance scores are calculated. Higher TF-IDF scores indicate that a word is more important or distinctive within the comment dataset.
 
 ## App Features
 
@@ -164,25 +167,14 @@ The word cloud gives a quick visual summary of commonly used words in the commen
 
 The treemap shows the most frequent words in a structured chart where larger boxes represent more frequent words.
 
-### 7. Topic Modeling with LDA
+### 7. Topic Modeling 
 
 The app uses Latent Dirichlet Allocation, also known as LDA, to identify common discussion topics in the YouTube comments.
+The LDA model groups comments into a selected number of topics based on word patterns. Each comment is also assigned with a topic score to represents how strongly a comment belongs to its assigned topic. 
 
-The LDA model groups comments into a selected number of topics based on word patterns.
+In addition to LDA, the app also extracts N-grams to identify common phrases in the comments. This helps capture repeated two-word or three-word phrases that may not be clear from individual words alone.
 
-For each topic, the app displays:
-
-- Topic ID
-- Topic keywords
-- Topic name based on top keywords
-- Number of comments assigned to the topic
-
-Each comment is also assigned:
-
-- A dominant topic
-- A topic score
-
-The topic score represents how strongly a comment belongs to its assigned topic.
+The app also uses TF-IDF keyword extraction to identify important words that appear frequently in specific comments or groups of comments, while giving less weight to very common words that appear across many comments.
 
 ### 8. Downloadable Results
 
@@ -194,6 +186,20 @@ Available downloads include:
 - Topic modeling results
 
 This makes it easier to review the results outside the app or use them for further analysis.
+
+## Conclusion and Future Work
+
+### Conclusion
+
+Based on the sample YouTube videos tested so far, RoBERTa appears to be the most effective and suitable model for analyzing sentiment in YouTube comments. Compared with the other sentiment models, RoBERTa is better at capturing the tone and context of short, informal comments, which are common on YouTube.
+
+For topic modeling, the results were less effective. Since YouTube comments are often very short, informal, and lack enough context, the topic modeling output did not always generate clear or meaningful topic labels. Based on the current testing, traditional topic modeling may not be the best approach for labeling themes in short-form comments without further improvement.
+
+### Future Work
+
+Future improvements could include adding comment engagement metrics, such as like count, as an additional component in the analysis. Comments with higher likes may represent opinions that resonate more strongly with viewers, so including this information could provide a better understanding of audience sentiment and reaction.
+
+Another area for future work is to explore more advanced topic modeling techniques that may perform better on short text data. This could include experimenting with transformer-based topic modeling methods or clustering approaches that use sentence embeddings to capture meaning beyond individual words.
 
 ## Live Demo
 
