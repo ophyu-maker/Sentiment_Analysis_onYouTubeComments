@@ -6,8 +6,7 @@ The app allows users to enter a YouTube video URL or use a default video URL.
 
 It extracts public YouTube comments using the YouTube Data API and analyzes the comments using multiple NLP models and visualization techniques.
 
-> Note: This project was initially developed as part of graduate-level data analytics learning and has been adapted later as a portfolio project 
-> to demonstrate use of practical NLP, sentiment analysis,and topic modeling.
+> Note: This project is a recreation of a group project originally developed as part of graduate-level data analytics coursework. It has been adapted into a portfolio project that can analyze different types of YT videos, demonstrating applications of NLP, sentiment analysis,and topic modeling.
 > The project uses public YouTube comment data and does not store private user information.
 
 ## Project Overview
