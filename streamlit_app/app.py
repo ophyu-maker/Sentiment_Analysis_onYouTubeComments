@@ -751,6 +751,35 @@ with col3:
         unsafe_allow_html=True
     )
 
+st.markdown(
+    """
+    <style>
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .section-title h2 {
+        font-size: 34px;
+        font-weight: 800;
+        color: #1d3557;
+        margin: 0;
+    }
+
+    .section-accent {
+        width: 8px;
+        height: 42px;
+        border-radius: 8px;
+        background: linear-gradient(180deg, #2f80ed, #56ccf2);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 st.divider()
 
 
@@ -758,7 +787,15 @@ st.divider()
 # Sentiment comparison
 # =====================================================
 
-st.subheader("Sentiment Model Comparison")
+st.markdown(
+    """
+    <div class="section-title">
+        <div class="section-accent"></div>
+        <h2>Sentiment Model Comparison</h2>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 comparison_table, comparison_long = create_model_comparison(results_df)
 
@@ -798,7 +835,16 @@ st.plotly_chart(fig, use_container_width=True)
 # Individual model charts
 # =====================================================
 
-st.subheader("Individual Sentiment Results")
+
+st.markdown(
+    """
+    <div class="section-title">
+        <div class="section-accent"></div>
+        <h2>Individual Sentiment Results</h2>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 tab1, tab2, tab3 = st.tabs(["VADER", "DistilBERT", "RoBERTa"])
 
@@ -909,7 +955,15 @@ st.divider()
 # Wordcloud and treemap
 # =====================================================
 
-st.subheader("Word Frequency Analysis")
+st.markdown(
+    """
+    <div class="section-title">
+        <div class="section-accent"></div>
+        <h2>Word Frequency Analysis</h2>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown("#### Word Cloud")
 wc_fig = create_wordcloud(word_counts)
@@ -932,7 +986,15 @@ st.divider()
 # Topic modeling section
 # =====================================================
 
-st.subheader("Topic Modeling")
+st.markdown(
+    """
+    <div class="section-title">
+        <div class="section-accent"></div>
+        <h2>Topic Modeling</h2>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown(
     "Use the box below to exclude extra words from topic modeling only. "
@@ -1114,7 +1176,16 @@ st.divider()
 # Download results
 # =====================================================
 
-st.subheader("Download Results")
+st.markdown(
+    """
+    <div class="section-title">
+        <div class="section-accent"></div>
+        <h2>Download Results</h2>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 csv = results_df.to_csv(index=False).encode("utf-8")
 
