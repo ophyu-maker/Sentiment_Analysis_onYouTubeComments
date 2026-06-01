@@ -688,12 +688,68 @@ word_counts = st.session_state["word_counts"]
 
 st.subheader("Summary")
 
-col1, col2, col3, col4 = st.columns(4)
+def kpi_card(value, label, color="#2f80ed"):
+    return f"""
+    <div class="kpi-card" style="border-bottom: 4px solid {color};">
+        <div class="kpi-value" style="color: {color};">{value}</div>
+        <div class="kpi-label">{label}</div>
+    </div>
+    """
 
-col1.metric("Total Comments", f"{len(results_df):,}")
-col2.metric("Unique Videos", results_df["video_id"].nunique())
-col3.metric("Avg Comment Length", round(results_df["clean_comment"].str.len().mean(), 1))
-col4.metric("Total Unique Words", f"{len(word_counts):,}")
+
+st.markdown(
+    """
+    <style>
+    .kpi-card {
+        background-color: #ffffff;
+        border: 1px solid #e6eaf0;
+        border-radius: 16px;
+        padding: 26px 18px;
+        text-align: center;
+        min-height: 145px;
+        box-shadow: 0 4px 14px rgba(15, 42, 58, 0.08);
+    }
+
+    .kpi-value {
+        font-size: 44px;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: 0.5px;
+    }
+
+    .kpi-label {
+        margin-top: 14px;
+        color: #667085;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown(
+        kpi_card(f"{len(results_df):,}", "Total Comments", "#2f80ed"),
+        unsafe_allow_html=True
+    )
+
+with col2:
+    st.markdown(
+        kpi_card(round(results_df["clean_comment"].str.len().mean(), 1), "Avg Comment Length", "#f2994a"),
+        unsafe_allow_html=True
+    )
+
+with col3:
+    st.markdown(
+        kpi_card(f"{len(word_counts):,}", "Unique Words", "#27ae60"),
+        unsafe_allow_html=True
+    )
 
 st.divider()
 
