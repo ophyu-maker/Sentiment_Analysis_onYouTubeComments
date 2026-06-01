@@ -7,7 +7,6 @@ The app allows users to enter a YouTube video URL or use a default video URL.
 It extracts public YouTube comments using the YouTube Data API and analyzes the comments using multiple NLP models and visualization techniques.
 
 > Note: This project is a recreation of a group project originally developed as part of graduate-level data analytics coursework. It has been adapted into a portfolio project that can analyze different types of YT videos, demonstrating applications of NLP, sentiment analysis,and topic modeling.
-> The project uses public YouTube comment data and does not store private user information.
 
 ## Project Overview
 
@@ -74,14 +73,12 @@ The word frequency results are used to create:
 
 Multiple NLP techniques are used to identify common discussion patterns in the YouTube comments.
 
-For topic modeling, the cleaned tokens are converted into a dictionary and corpus using Gensim. Then Latent Dirichlet Allocation, also known as LDA, is applied to group comments into a selected number of topics based on word patterns.
-The LDA model returns the top keywords for each topic, and the app creates a readable topic name using the most important keywords.
+For topic modeling, the cleaned tokens are converted into a dictionary and corpus using Gensim. Then Latent Dirichlet Allocation, also known as LDA, is applied to group comments into a selected number of topics based on word patterns. The model returns the top keywords for each topic, and a readable topic name using the most important keywords.
 
 In addition to LDA, N-gram analysis is also used to extract common phrases from the comments. This includes frequently repeated three-word phrases, which can help capture meaning that may not be clear from single words alone.
 
 TF-IDF keyword extraction is used to identify important words in the comment dataset. TF-IDF gives more weight to words that are meaningful within the dataset and less weight to very common words that appear across many comments.
 
-Together, LDA, N-gram analysis, and TF-IDF provide different ways to explore the main themes and keywords in the YouTube comments.
 
 ### 8. Topic and Keyword Score Assignment
 
@@ -170,11 +167,10 @@ The treemap shows the most frequent words in a structured chart where larger box
 ### 7. Topic Modeling 
 
 The app uses Latent Dirichlet Allocation, also known as LDA, to identify common discussion topics in the YouTube comments.
-The LDA model groups comments into a selected number of topics based on word patterns. Each comment is also assigned with a topic score to represents how strongly a comment belongs to its assigned topic. 
 
-In addition to LDA, the app also extracts N-grams to identify common phrases in the comments. This helps capture repeated two-word or three-word phrases that may not be clear from individual words alone.
+In addition to LDA, the app also extracts N-grams to identify common three-word phrases in the comments. 
 
-The app also uses TF-IDF keyword extraction to identify important words that appear frequently in specific comments or groups of comments, while giving less weight to very common words that appear across many comments.
+The app also uses TF-IDF keyword extraction to identify important words that appear frequently in specific comments or groups of comments.
 
 ### 8. Downloadable Results
 
@@ -191,13 +187,13 @@ This makes it easier to review the results outside the app or use them for furth
 
 ### Conclusion
 
-Based on the sample YouTube videos tested so far, RoBERTa appears to be the most effective and suitable model for analyzing sentiment in YouTube comments. Compared with the other sentiment models, RoBERTa is better at capturing the tone and context of short, informal comments, which are common on YouTube.
+Based on the sample YouTube videos tested so far, RoBERTa appears to be the most suitable model for analyzing sentiment in YouTube comments. Compared with the other sentiment models, RoBERTa is better at capturing the tone and context of short, informal comments, which are common on YouTube.
 
-For topic modeling, the results were less effective. Since YouTube comments are often very short, informal, and lack enough context, the topic modeling output did not always generate clear or meaningful topic labels. Based on the current testing, traditional topic modeling may not be the best approach for labeling themes in short-form comments without further improvement.
+For topic modeling, the results were less effective. Since YouTube comments are often very short, informal, and lack enough context, the topic modeling output did not always generate clear or meaningful topic labels. Based on the current testing, traditional topic modeling may not be the best approach for labeling themes in short form comments without further improvement.
 
 ### Future Work
 
-Future improvements could include adding comment engagement metrics, such as like count, as an additional component in the analysis. Comments with higher likes may represent opinions that resonate more strongly with viewers, so including this information could provide a better understanding of audience sentiment and reaction.
+Future improvements could include adding like counts as an additional component in the analysis. Comments with higher likes may represent opinions that resonate more strongly with viewers, so including this information could provide a better understanding of audience sentiment and reaction.
 
 Another area for future work is to explore more advanced topic modeling techniques that may perform better on short text data. This could include experimenting with transformer-based topic modeling methods or clustering approaches that use sentence embeddings to capture meaning beyond individual words.
 
